@@ -7,7 +7,7 @@ Before running the program, you must have the following installed on your machin
     Python 3
     Required packages (see requirements.txt)
 
-The system is designed for ease of use with a single command to execute and no need to navigate through nested directories. To run the program from the root directory named "Position Predictor", users can simply follow two steps:
+The system is designed for ease of use with a single command to execute and no need to navigate through nested directories. To run the program, users can simply follow two steps from the root directory:
 
  - pip3 install -r requirements.txt (To install required dependencies)
  - python main.py (To run the code)
