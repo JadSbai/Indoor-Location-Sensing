@@ -3,6 +3,7 @@ from collections import defaultdict
 from typing import List, Tuple, Dict
 import math
 from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 
 
 class Map(ABC):
@@ -172,3 +173,106 @@ def hot_encode(features: List[List[Tuple[Tuple[int, int], int]]]):
                 feature[3] = snr
         encoded_features.append(feature)
     return encoded_features
+
+
+def create_layout():
+    num_rows = 15
+    num_cols = 24
+
+    # create a new figure and set the size
+    fig, ax = plt.subplots(figsize=(12, 8))
+
+    # create a grid of rectangles to represent the cells
+    for i in range(num_rows):
+        for j in range(num_cols):
+            rect = plt.Rectangle((j, num_rows - i - 1), 1, 1, linewidth=1, edgecolor='black', facecolor='white',
+                                 alpha=0.5)
+            ax.add_patch(rect)
+
+    areas = [(5, 14, 13, 23), (0, 2, 23, 23), (0, 0, 9, 10), (3, 9, 7, 7), (0, 2, 0, 2), (9, 11, 0, 0)]
+
+    # loop over the rows and columns in the rectangular area and color each corresponding patch
+    for area in areas:
+        for i in range(area[0], area[1] + 1):
+            for j in range(area[2], area[3] + 1):
+                ax.patches[(num_rows - 1 - i) * num_cols + j].set_facecolor('red')
+
+    # set the tick labels to show the indices of the cells
+    ax.set_xticks(range(num_cols + 1))
+    ax.set_yticks(range(num_rows + 1))
+    ax.set_xticklabels(range(num_cols + 1))
+    ax.set_yticklabels(range(num_rows + 1))
+
+    # add grid lines to show the boundaries between the cells
+    ax.set_xticks([x for x in range(num_cols + 1)], minor=True)
+    ax.set_yticks([y for y in range(num_rows + 1)], minor=True)
+    ax.grid(which='minor', color='black', linestyle='-', linewidth=1)
+
+    # write text on top of certain cells
+    ax.text(17.5, 5.5, 'COUNTER', ha='center', va='center', color='black', fontsize=20, fontweight='bold')
+    ax.text(13, 0.5, 'ENTRANCE', ha='center', va='center', color='black', fontsize=15, fontweight='bold')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    return fig, ax, plt
+
+
+def get_cleaned_data(data):
+    # create a dictionary to keep track of the lowest second value for each fourth value
+    lowest_second = {}
+
+    # create a dictionary to keep track of the sum and count of third values for each fourth value
+    third_sums = {}
+    third_counts = {}
+
+    # create a dictionary to keep track of the sum and count of third values for each fourth value
+    fourth_sums = {}
+    fourth_counts = {}
+
+    # iterate over each element in the data list
+    for element in data:
+        # get the fourth value of the current element
+        fifth_value = element[4]
+
+        # if the fourth value is not in the lowest_second dictionary, add it with the current element's second value
+        if fifth_value not in lowest_second:
+            lowest_second[fifth_value] = element[1]
+
+        # otherwise, compare the current element's second value to the existing value for the fourth value,
+        # and update the lowest_second dictionary if the current element has a lower second value
+        else:
+            if element[1] < lowest_second[fifth_value]:
+                lowest_second[fifth_value] = element[1]
+
+        # if the fourth value is not in the third_sums and third_counts dictionaries,
+        # add it with the current element's third value as the sum and count
+        if fifth_value not in third_sums:
+            third_sums[fifth_value] = element[2]
+            third_counts[fifth_value] = 1
+            fourth_sums[fifth_value] = element[3]
+            fourth_counts[fifth_value] = 1
+
+        # otherwise, add the current element's third value to the sum for the fourth value,
+        # and increment the count of elements for the fourth value
+        else:
+            third_sums[fifth_value] = tuple([sum(x) for x in zip(third_sums[fifth_value], element[2])])
+            third_counts[fifth_value] += 1
+            fourth_sums[fifth_value] = tuple([sum(x) for x in zip(fourth_sums[fifth_value], element[3])])
+            fourth_counts[fifth_value] += 1
+
+    # create a new list to hold the cleaned data
+    cleaned_data = []
+
+    # iterate over each element in the data list
+    for element in data:
+        # get the fourth value of the current element
+        fifth_value = element[4]
+
+        # if the current element has the lowest second value for the fourth value,
+        # add the element to the cleaned data list with the averaged third value
+        if element[1] == lowest_second[fifth_value]:
+            third_value = tuple([x / third_counts[fifth_value] for x in third_sums[fifth_value]])
+            fourth_value = tuple([x / fourth_counts[fifth_value] for x in fourth_sums[fifth_value]])
+            cleaned_data.append((element[0], element[1], third_value, fourth_value, fifth_value))
+
+    # print the cleaned data
+    return cleaned_data
